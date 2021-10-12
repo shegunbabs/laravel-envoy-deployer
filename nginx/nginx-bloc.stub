@@ -1,0 +1,68 @@
+#server {
+#    listen 80;
+#    server_name %domain_name%;
+#    return 301 https://%domain_name%\$request_uri;
+#}
+
+server {
+\t listen 80;
+\t server_name www.%domain_name%;
+\t return 301 http://%domain_name%\$request_uri;
+}
+
+server {
+\t listen 80;
+\t #listen 443 ssl http2;
+\t server_name %domain_name%;
+\t root \"%www_root%\";
+
+\t index index.html index.htm index.php;
+
+\t charset utf-8;
+
+\t location ^~ /.well-known/acme-challenge/ {
+\t\t allow all;
+\t\t auth_basic off;
+\t\t alias %www_root%/.well-known/acme-challenge/;
+\t }
+
+\t location / {
+\t\t try_files \$uri \$uri/ /index.php?\$query_string;
+\t }
+
+
+\t location = /favicon.ico { access_log off; log_not_found off; }
+\t location = /robots.txt  { access_log off; log_not_found off; }
+
+\t access_log /var/log/nginx/%domain_name%-access.log;
+\t error_log  /var/log/nginx/%domain_name%-error.log error;
+
+\t sendfile off;
+
+\t client_max_body_size 100m;
+
+\t location ~ \.php\$ {
+\t\t fastcgi_split_path_info ^(.+\.php)(/.+)\$;
+\t\t fastcgi_pass unix:/var/run/php/php%php_version%-fpm.sock;
+\t\t fastcgi_index index.php;
+\t\t include fastcgi_params;
+\t\t fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+\t\t fastcgi_intercept_errors off;
+\t\t fastcgi_buffer_size 16k;
+\t\t fastcgi_buffers 4 16k;
+\t\t fastcgi_connect_timeout 300;
+\t\t fastcgi_send_timeout 300;
+\t\t fastcgi_read_timeout 300;
+\t }
+
+\t location ~ /\.ht {
+\t\t deny all;
+\t }
+
+\t location ~* (?:^|/)\. {
+\t\t deny all;
+\t }
+
+    #ssl_certificate        /etc/letsencrypt/live/%domain_name%/fullchain.pem;
+    #ssl_certificate_key    /etc/letsencrypt/live/%domain_name%/privkey.pem;
+}
